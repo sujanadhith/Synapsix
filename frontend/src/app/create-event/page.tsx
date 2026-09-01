@@ -13,26 +13,81 @@ export default function CreateEventPage() {
   const [capacity, setCapacity] = useState("");
   const [description, setDescription] = useState("");
 
-  const handleAskAI = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleAskAI = async () => {
+    setError("");
+
+    // Basic validation
+    if (!eventName || !eventType || !date) {
+      setError("Please enter Event Name, Event Type and Event Date.");
+      return;
+    }
+
     const eventData = {
       eventName,
       eventType,
       date,
       venue,
-      capacity,
+      capacity: capacity ? Number(capacity) : 0,
       description,
     };
 
+    // Save locally so AI pages can use it
     localStorage.setItem(
       "eventiq-current-event",
       JSON.stringify(eventData)
     );
 
-    router.push("/ai-chatbot");
+    try {
+      setLoading(true);
+
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL ||
+        "https://synapsix-ok0i.onrender.com";
+
+      const response = await fetch(`${API_URL}/api/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to create event"
+        );
+      }
+
+      console.log("Event created:", data);
+
+      // Save backend response too
+      localStorage.setItem(
+        "eventiq-created-event",
+        JSON.stringify(data)
+      );
+
+      router.push("/ai-chatbot");
+    } catch (err) {
+      console.error("Create event error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to connect to backend."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="min-h-screen bg-[#f5f7fb] flex">
+
       {/* SIDEBAR */}
       <aside className="w-[270px] min-h-screen bg-[#091120] text-white p-6 fixed left-0 top-0">
         <div className="mb-10">
@@ -46,6 +101,7 @@ export default function CreateEventPage() {
         </div>
 
         <nav className="space-y-3">
+
           <button
             onClick={() => router.push("/dashboard")}
             className="w-full text-left px-4 py-4 rounded-xl hover:bg-gray-800 transition"
@@ -53,7 +109,9 @@ export default function CreateEventPage() {
             Dashboard
           </button>
 
-          <button className="w-full text-left px-4 py-4 rounded-xl bg-blue-600 font-semibold">
+          <button
+            className="w-full text-left px-4 py-4 rounded-xl bg-blue-600 font-semibold"
+          >
             Create Event
           </button>
 
@@ -84,11 +142,13 @@ export default function CreateEventPage() {
           >
             Promotion Strategy
           </button>
+
         </nav>
       </aside>
 
       {/* MAIN CONTENT */}
       <section className="ml-[270px] w-[calc(100%-270px)] px-12 py-10">
+
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">
             Create Event
@@ -100,7 +160,9 @@ export default function CreateEventPage() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-8 max-w-5xl shadow-sm">
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             {/* EVENT NAME */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -130,11 +192,17 @@ export default function CreateEventPage() {
                 <option value="">Select event type</option>
                 <option value="Hackathon">Hackathon</option>
                 <option value="Workshop">Workshop</option>
-                <option value="Technical Event">Technical Event</option>
-                <option value="Cultural Event">Cultural Event</option>
+                <option value="Technical Event">
+                  Technical Event
+                </option>
+                <option value="Cultural Event">
+                  Cultural Event
+                </option>
                 <option value="Seminar">Seminar</option>
                 <option value="Competition">Competition</option>
-                <option value="Sports Event">Sports Event</option>
+                <option value="Sports Event">
+                  Sports Event
+                </option>
                 <option value="Other">Other</option>
               </select>
             </div>
@@ -182,10 +250,12 @@ export default function CreateEventPage() {
                 className="w-full h-14 px-4 border border-gray-300 rounded-xl text-gray-900 placeholder:text-gray-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
+
           </div>
 
           {/* DESCRIPTION */}
           <div className="mt-6">
+
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               Event Description
             </label>
@@ -197,10 +267,12 @@ export default function CreateEventPage() {
               rows={6}
               className="w-full p-4 border border-gray-300 rounded-xl text-gray-900 placeholder:text-gray-400 outline-none resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
+
           </div>
 
           {/* AI INFO */}
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 mt-6">
+
             <h3 className="font-semibold text-blue-700">
               EventIQ AI Assistant
             </h3>
@@ -210,10 +282,21 @@ export default function CreateEventPage() {
               description, identify target students, suggest promotion
               strategies and predict engagement.
             </p>
+
           </div>
+
+          {/* ERROR */}
+          {error && (
+            <div className="mt-5 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-600 text-sm font-medium">
+                {error}
+              </p>
+            </div>
+          )}
 
           {/* BUTTONS */}
           <div className="flex justify-end gap-4 mt-8">
+
             <button
               type="button"
               onClick={() => router.push("/dashboard")}
@@ -225,11 +308,16 @@ export default function CreateEventPage() {
             <button
               type="button"
               onClick={handleAskAI}
-              className="h-12 px-8 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+              disabled={loading}
+              className="h-12 px-8 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:bg-blue-400 disabled:cursor-not-allowed"
             >
-              Create & Ask AI →
+              {loading
+                ? "Creating Event..."
+                : "Create & Ask AI →"}
             </button>
+
           </div>
+
         </div>
       </section>
     </main>
