@@ -72,7 +72,11 @@ export default function AIChatbotPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const API_URL =
+        process.env.NEXT_PUBLIC_API_URL ||
+        "https://synapsix-ok0i.onrender.com";
+
+      const response = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
 
         headers: {
@@ -105,7 +109,7 @@ export default function AIChatbotPage() {
         ...prev,
         {
           sender: "ai",
-          text: "I could not connect to the AI backend. Please make sure the backend server is running on port 5000.",
+          text: "I could not connect to the online EventIQ backend. Please try again.",
         },
       ]);
     } finally {
@@ -120,7 +124,7 @@ export default function AIChatbotPage() {
   return (
     <main className="min-h-screen bg-[#f6f8fc] flex text-gray-900">
       {/* SIDEBAR */}
-      <aside className="w-[270px] min-h-screen bg-[#091120] text-white p-6 fixed left-0 top-0">
+      <aside className="w-[270px] min-h-screen bg-[#091120] text-white p-6 fixed left-0 top-0 overflow-y-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">
             EventIQ <span className="text-blue-500">AI</span>
@@ -199,6 +203,20 @@ export default function AIChatbotPage() {
             className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-800"
           >
             Event Checklist
+          </button>
+
+          <button
+            onClick={() => router.push("/sponsor-finder")}
+            className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-800"
+          >
+            Sponsor Finder
+          </button>
+
+          <button
+            onClick={() => router.push("/venue-food-finder")}
+            className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-800"
+          >
+            Venue & Food Finder
           </button>
         </nav>
       </aside>
